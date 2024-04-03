@@ -263,7 +263,7 @@ begin
                                 task_name      => task,
                                 sql_stmt       => plsql_stmt,
                                 language_flag  => dbms_sql.native,
-                                parallel_level => 10
+                                parallel_level => 100
                                );       
  -- drop the task
  dbms_parallel_execute.drop_task(task_name      => task);

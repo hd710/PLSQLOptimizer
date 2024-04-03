@@ -3,6 +3,7 @@ drop table user_dept    purge;
 drop table item_loc_soh purge;
 drop table item purge;
 drop table loc  purge;
+drop table item_loc_soh_hist purge;
 --create item
 create table item(
     item      varchar2(25) not null,
@@ -140,15 +141,15 @@ begin
     l_sql_stat:='create table item_loc_soh_hist
 				as
 				select 
-                /*+ INDEX(item_loc_soh item_loc_soh_dept_idx) */
+                /*+ full(i) shared(i) */
 				item ,
 				loc ,
 				dept ,
 				unit_cost ,
 				stock_on_hand,
 				(unit_cost * stock_on_hand) as value_item_loc
-				from item_loc_soh 
-				where 1=1 ';
+				from item_loc_soh i
+				where 1=1  ';
     --    
     if i_dept is not null then
        l_sql_stat := l_sql_stat || ' and dept =' || i_dept;

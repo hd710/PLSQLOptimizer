@@ -138,7 +138,6 @@ begin
     end if;
     --Create a new table that will contain the same information plus the stock value per item/loc (unit_cost*stock_on_hand)
     l_sql_stat:='create table item_loc_soh_hist
-				partition by hash(loc,dept) partitions 4
 				as
 				select 
                 /*+ INDEX(item_loc_soh item_loc_soh_dept_idx) */

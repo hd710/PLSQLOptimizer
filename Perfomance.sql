@@ -73,11 +73,45 @@ Note
 				Snap Id	Snap Time			Sessions	Cursors/Session
 	Begin Snap:	15178	02-Jun-23 11:00:02	95			23.8
 	End Snap:	15179	02-Jun-23 12:00:06	91			21.9
-	Elapsed:	 		60.07 (mins)	 	 
-	DB Time:	 		3,081.56 (mins)	 	 
+	Elapsed:	 		60.07 (mins)	 	 represents the snapshot window
+	DB Time:	 		3,081.56 (mins)	 	 represents activity on database
 	
- 2. Instance efficiency
+	Problem:
+	DB Time >(exceeds) elapsed time , means some sessions are waiting for resources
+	The database is very busy by comparing the elasped time to the DB time, long running user queries
+	
+	Solution : 
+	
+ 2. Load profile
+ Issue that users aren''t able to log in and existing users can''t complete their transactions.
+ 
+ 
  3. Top 10 foreground events by wait Time
+    Event											Waits		Total Wait Time (sec)		Avg Wait	% DB time	Wait Class
+	---------------------------------------------------------------------------------------------------------------------------
+	resmgr:cpu quantum								255,603		153.7K						601.40ms	83.1		Scheduler
+	DB CPU	 													29.1K	 								15.8	 
+	ASM IO for non-blocking poll					2,240,871	224.7						100.29us	.1			User I/O
+	cursor: pin S wait on X							81			30.6						377.30ms	.0			Concurrency
+	cell single block physical read					773			9.9							12.83ms		.0			User I/O
+	read by other session							446			9							20.08ms		.0			User I/O
+	cell single block physical read: RDMA			55,641		6.9							124.71us	.0			Other
+	buffer busy waits								294			6.2							21.23ms		.0			Concurrency
+	cell single block physical read: flash cache	5,061		5.1							1.02ms		.0			User I/O
+	gc buffer busy acquire							688			4.8							6.93ms		.0			Cluster
+    -----------------------------------------------------------------------------------------------------------------------------
+	represents the highest amount of resource are being consumed within the database for the snapshot period.
+	
+	Problem:
+	ASM IO for non-blocking poll : this wait event when we execute direct path load events such as a parallel CTAS (create table as select) or a direct path INSERT operation.
+	
+	Other problem is the cursor: pin S wait on X	 
+	
+	Solution : 
+	1. using the hint /*+ full(i) shared(i) */ 
+	2. check the open_cursors and session_cached_cursors : 
+		open_cursors : Maximum number of Cursors opened simultaneously in the Database. 
+		session_cached_cursors : Maximum number of Cursors that can be cached per session.
  
 
 ## Nice to have

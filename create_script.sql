@@ -242,7 +242,9 @@ is
  l_chunk_sql      varchar2(1000);
 begin
  --Create directory
- --CREATE DIRECTORY FLAT_FILE AS 'C:\Optimizer';
+ --DROP  DIRECTORY FLAT_FILE;
+ --CREATE DIRECTORY FLAT_FILE AS 'C:\Optimizer\flat_file';
+ --CREATE DIRECTORY staging AS 'FLAT_FILE';
  --GRANT READ, WRITE ON DIRECTORY FLAT_FILE TO USER;
  --create the task
  dbms_parallel_execute.create_task(task_name => task);

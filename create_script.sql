@@ -317,3 +317,74 @@ exception
         raise;
 end "GET_LOCATION_LIST";
 /
+
+create or replace TYPE dump_ot AS OBJECT
+    ( file_name  VARCHAR2(200)
+    , no_records NUMBER
+   , session_id NUMBER
+ );
+/
+create or replace NONEDITIONABLE TYPE dump_ntt AS TABLE OF dump_ot;
+/
+create or replace FUNCTION parallel_create_flat_file (
+                    p_source    IN SYS_REFCURSOR,
+                    p_filename  IN VARCHAR2,
+                    p_directory IN VARCHAR2
+                    ) RETURN dump_ntt
+                      PIPELINED
+                     PARALLEL_ENABLE (PARTITION p_source BY ANY) AS
+  
+       TYPE row_ntt IS TABLE OF VARCHAR2(32767);
+      v_rows    row_ntt;
+      v_file    UTL_FILE.FILE_TYPE;
+      v_buffer  VARCHAR2(32767);
+      v_name    VARCHAR2(128);
+      v_lines   PLS_INTEGER := 0;
+      c_eol     CONSTANT VARCHAR2(1) := CHR(10);
+      c_eollen  CONSTANT PLS_INTEGER := LENGTH(c_eol);
+      c_maxline CONSTANT PLS_INTEGER := 32767;
+
+
+      type rc_file_flat is record (
+                        itens          varchar2(1000)
+                        );
+    type file_flat_t is table of rc_file_flat;
+BEGIN
+      LOOP
+        FETCH p_source BULK COLLECT INTO v_rows LIMIT 100;
+    
+         FOR i IN 1 .. v_rows.COUNT LOOP
+             v_name := p_filename || '_' || TO_CHAR(v_rows(i)) || '.csv';
+             v_file := UTL_FILE.FOPEN(p_directory, v_name, 'w', 32767);
+             --utl_file.put(v_file,'item,dept,unitCost,StockOnHand'); 
+          for l_file_flat in(   select /*+ parallel */  
+                     item || ',' ||
+                      dept || ',' || 
+                      sum(unit_cost)      || ','    ||
+                      sum(stock_on_hand)    
+                      as itens
+                        from item_loc_soh  
+                        where loc=v_rows(i)
+                        group by item,dept)
+           loop
+               v_buffer := l_file_flat.itens;
+               UTL_FILE.PUT_LINE(v_file, v_buffer);
+           end loop; 
+           
+          UTL_FILE.PUT_LINE(v_file, v_buffer);
+          UTL_FILE.FCLOSE(v_file);
+    
+          PIPE ROW (dump_ot(v_name, v_lines, v_rows(i))); 
+         END LOOP;
+
+         v_lines := v_lines + v_rows.COUNT;
+         
+ 
+         EXIT WHEN p_source%NOTFOUND;
+      END LOOP;
+      CLOSE p_source;
+
+      RETURN;
+
+END parallel_create_flat_file;
+/

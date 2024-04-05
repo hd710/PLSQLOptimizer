@@ -83,8 +83,11 @@ Note
 	Solution : 
 	
  2. Load profile
- Issue that users aren''t able to log in and existing users can''t complete their transactions.
- 
+  Problem:
+  Issue that users aren''t able to log in and existing users can''t complete their transactions.
+  
+  Solution :
+  
  
  3. Top 10 foreground events by wait Time
     Event											Waits		Total Wait Time (sec)		Avg Wait	% DB time	Wait Class
@@ -119,6 +122,25 @@ Note
 11. Create a program (plsql and/or java, or any other language) that can extract to a flat file (csv), 
 1 file per location: the item, department unit cost, stock on hand quantity and stock value.
 Creating the 1000 files should take less than 30s.
- 
- => See procedure run_task_parallel
+
+create or replace TYPE dump_ot AS OBJECT
+    ( file_name  VARCHAR2(200)
+    , no_records NUMBER
+   , session_id NUMBER
+ );
+
+create or replace NONEDITIONABLE TYPE dump_ntt AS TABLE OF dump_ot;
+
+
+function parallel_create_flat_file;
+                        
+SELECT *
+    FROM   TABLE(
+                parallel_create_flat_file(
+					 CURSOR(SELECT /*+ PARALLEL(s,4) */
+								   loc
+							FROM   loc  ),
+					 'Flat_File_loc_',
+					 'FLAT_FILE'
+				   )) nt;
 

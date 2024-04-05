@@ -318,15 +318,16 @@ exception
 end "GET_LOCATION_LIST";
 /
 
-create or replace TYPE dump_ot AS OBJECT
+create or replace TYPE flat_file_ot AS OBJECT
     ( file_name  VARCHAR2(200)
     , no_records NUMBER
    , session_id NUMBER
  );
 /
-create or replace NONEDITIONABLE TYPE dump_ntt AS TABLE OF dump_ot;
+create or replace TYPE flat_file_ntt AS TABLE OF flat_file_ot;
 /
-create or replace FUNCTION parallel_create_flat_file (
+
+create or replace  FUNCTION parallel_create_flat_file (
                     p_source    IN SYS_REFCURSOR,
                     p_filename  IN VARCHAR2,
                     p_directory IN VARCHAR2
@@ -340,11 +341,6 @@ create or replace FUNCTION parallel_create_flat_file (
       v_buffer  VARCHAR2(32767);
       v_name    VARCHAR2(128);
       v_lines   PLS_INTEGER := 0;
-      c_eol     CONSTANT VARCHAR2(1) := CHR(10);
-      c_eollen  CONSTANT PLS_INTEGER := LENGTH(c_eol);
-      c_maxline CONSTANT PLS_INTEGER := 32767;
-
-
       type rc_file_flat is record (
                         itens          varchar2(1000)
                         );
@@ -373,12 +369,9 @@ BEGIN
            
           UTL_FILE.PUT_LINE(v_file, v_buffer);
           UTL_FILE.FCLOSE(v_file);
-    
-          PIPE ROW (dump_ot(v_name, v_lines, v_rows(i))); 
+          v_lines := v_lines + v_rows.COUNT;
+          PIPE ROW (flat_file_ot(v_name, v_lines, v_rows(i))); 
          END LOOP;
-
-         v_lines := v_lines + v_rows.COUNT;
-         
  
          EXIT WHEN p_source%NOTFOUND;
       END LOOP;

@@ -318,22 +318,22 @@ exception
 end "GET_LOCATION_LIST";
 /
 
-create or replace TYPE flat_file_ot AS OBJECT
+create or replace TYPE dump_ot AS OBJECT
     ( file_name  VARCHAR2(200)
     , no_records NUMBER
    , session_id NUMBER
  );
 /
-create or replace TYPE flat_file_ntt AS TABLE OF flat_file_ot;
+create or replace TYPE dump_ntt AS TABLE OF dump_ot;
 /
 
-create or replace  FUNCTION parallel_create_flat_file (
+create or replace FUNCTION parallel_create_flat_file (
                     p_source    IN SYS_REFCURSOR,
                     p_filename  IN VARCHAR2,
                     p_directory IN VARCHAR2
                     ) RETURN dump_ntt
-                      PIPELINED
-                     PARALLEL_ENABLE (PARTITION p_source BY ANY) AS
+                    PIPELINED
+                    PARALLEL_ENABLE (PARTITION p_source BY ANY) AS
   
        TYPE row_ntt IS TABLE OF VARCHAR2(32767);
       v_rows    row_ntt;
@@ -341,18 +341,14 @@ create or replace  FUNCTION parallel_create_flat_file (
       v_buffer  VARCHAR2(32767);
       v_name    VARCHAR2(128);
       v_lines   PLS_INTEGER := 0;
-      type rc_file_flat is record (
-                        itens          varchar2(1000)
-                        );
-    type file_flat_t is table of rc_file_flat;
 BEGIN
-      LOOP
-        FETCH p_source BULK COLLECT INTO v_rows LIMIT 100;
-    
-         FOR i IN 1 .. v_rows.COUNT LOOP
-             v_name := p_filename || '_' || TO_CHAR(v_rows(i)) || '.csv';
-             v_file := UTL_FILE.FOPEN(p_directory, v_name, 'w', 32767);
-             --utl_file.put(v_file,'item,dept,unitCost,StockOnHand'); 
+      loop
+        fetch p_source bulk collect into v_rows limit 100;
+
+         for i in 1 .. v_rows.count loop
+             v_name := p_filename || '_' || to_char(v_rows(i)) || '.csv';
+             v_file := utl_file.fopen(p_directory, v_name, 'w', 32767);
+             --utl_file.put(v_file,'item,dept,unitcost,stockonhand'); 
           for l_file_flat in(   select /*+ parallel */  
                      item || ',' ||
                       dept || ',' || 
@@ -364,20 +360,20 @@ BEGIN
                         group by item,dept)
            loop
                v_buffer := l_file_flat.itens;
-               UTL_FILE.PUT_LINE(v_file, v_buffer);
+               utl_file.put_line(v_file, v_buffer);
            end loop; 
-           
-          UTL_FILE.PUT_LINE(v_file, v_buffer);
-          UTL_FILE.FCLOSE(v_file);
-          v_lines := v_lines + v_rows.COUNT;
-          PIPE ROW (flat_file_ot(v_name, v_lines, v_rows(i))); 
-         END LOOP;
- 
-         EXIT WHEN p_source%NOTFOUND;
-      END LOOP;
-      CLOSE p_source;
 
-      RETURN;
+          utl_file.put_line(v_file, v_buffer);
+          utl_file.fclose(v_file);
+          v_lines := v_lines + v_rows.count;
+          pipe row (dump_ot(v_name, v_lines, v_rows(i))); 
+         end loop;
+
+         exit when p_source%notfound;
+      end loop;
+      close p_source;
+
+      return;
 
 END parallel_create_flat_file;
 /

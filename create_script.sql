@@ -36,11 +36,11 @@ create table user_dept
 
 --- in average this will take 1s to be executed
 insert into item(item,dept,item_desc)
-select level, round(DBMS_RANDOM.value(1,100)), translate(dbms_random.string('a', 20), 'abcXYZ', level) from dual connect by level <= 1000;
+select level, round(DBMS_RANDOM.value(1,100)), translate(dbms_random.string('a', 20), 'abcXYZ', level) from dual connect by level <= 10000;
 
 --- in average this will take 1s to be executed
 insert into loc(loc,loc_desc)
-select level+100, translate(dbms_random.string('a', 20), 'abcXYZ', level) from dual connect by level <= 100;
+select level+100, translate(dbms_random.string('a', 20), 'abcXYZ', level) from dual connect by level <= 1000;
 
 -- in average this will take less than 120s to be executed : have an error in tablespace:
 --9	insert into item_loc_soh (item, loc, dept, unit_cost, stock_	ORA-01536: space quota exceeded for tablespace 'APEX_BIGFILE_INSTANCE_TBS4'

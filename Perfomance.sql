@@ -104,9 +104,12 @@ Note
 
 ## Nice to have
 ### Performance
-11. Create a program (plsql and/or java, or any other language) that can extract to a flat file (csv), 
-1 file per location: the item, department unit cost, stock on hand quantity and stock value.
-Creating the 1000 files should take less than 30s.
+--11. Create a program (plsql and/or java, or any other language) that can extract to a flat file (csv), 
+--1 file per location: the item, department unit cost, stock on hand quantity and stock value.
+--Creating the 1000 files should take less than 30s.
+
+--Solution :
+-----------Parallel execution with pipelined functions
 
 create or replace TYPE dump_ot AS OBJECT
     ( file_name  VARCHAR2(200)

@@ -78,13 +78,17 @@ Note
 	The database is very busy by comparing the elasped time to the DB time, long running user queries
 	
 	Solution : 
+	using select for update nowait statement to avoid waiting by sessions for locks.
+	using collection to store data instead of fetching each row of queries
+	using Advanced Queuing system to add task in the workflow and handle it 
 	
  2. Load profile
-  Problem:
+  Problem: Hard parses (SQL)  and the number of transactions 
   Issue that users aren''t able to log in and existing users can''t complete their transactions.
+  A high hard parse rate usually is a result of not using bind variables
   
   Solution :
-  
+  using bind variables
  
  3. Top 10 foreground events by wait Time
     --------------------------------------------------------------------------------------------------------------------------
